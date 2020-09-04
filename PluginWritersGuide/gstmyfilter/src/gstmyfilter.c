@@ -87,3 +87,86 @@ gst_my_filter_class_init (GstMyFilterClass *klass)
   gst_element_class_add_pad_template (gstelement_class,
       gst_static_pad_template_get (&sink_factory));
 }
+
+/* Initialize the new element
+ * instantiate pads and add them to element
+ * set pad callbacks functions
+ * initialize instance structure
+ */
+static void
+gst_my_filter_init (GstMyFilter * filter)
+{
+  filter->sinkpad = gst_pad_new_from_static_template (&sink_factory, "sink");
+  gst_pad_set_event_function (filter->sinkpad,
+                              GST_DEBUG_FUNCPTR(gst_my_filter_sink_event));
+  gst_pad_set_chain_function (filter->sinkpad,
+                              GST_DEBUG_FUNCPTR(gst_my_filter_chain));
+  GST_PAD_SET_PROXY_CAPS (filter->sinkpad);
+  gst_element_add_pad (GST_ELEMENT (filter), filter->sinkpad);sss
+
+  filter->srcpad = gst_pad_new_from_static_template (&src_factory, "src");
+  GST_PAD_SET_PROXY_CAPS (filter->srcpad);
+  gst_element_add_pad (GST_ELEMENT (filter), filter->srcpad);
+
+  filter->silent = FALSE;
+}
+
+static void
+gst_my_filter_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec *pspec)
+{
+  GstMyFilter *filter = GST_MYFILTER (object);
+
+  switch (prop_id) {
+    case PROP_SILENT:
+      filter->silent = g_value_get_boolean (value);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
+}
+
+static void
+gst_my_filter_get_property (GObject * object, guint prop_id,
+    GValue *value, GParamSpec *pspec)
+{
+  GstMyFilter *filter = GST_MYFILTER (object);
+
+  switch (prop_id) {
+    case PROP_SILENT:
+      g_value_set_boolean (value, filter->silent);
+      break;
+    default:
+      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
+}
+
+/* entry point to the plug-in, called when the plugin is loaded
+ * initializes the plugin itself, register the element factories
+ * other features
+ */
+static boolean
+myfilter_init GstPlugin *myfilter)
+{
+  /* Debug catergory for filtering log messages */
+  GST_DEBUG_CATEGORY_INIT (gst_my_filter_debug, "myfilter", 0,
+      "This filter prints the buffer information");
+
+  return gst_element_register (myfilter, "myfilter", GST_RANK_NONE,
+      GST_TYPE_MYFILTER)
+}
+
+/* This structure is used by the gstreamer to register the plugin */
+GST_PLUGIN_DEFINE (
+  GST_VERSION_MAJOR,
+  GST_VERSION_MINOR,
+  myfilter,
+  "This filter prints the buffer information",
+  myfilter_init,
+  PACKAGE_VERSION,
+  GST_LICENSE,
+  GST_PACKAGE_NAME,
+  GST_PACKAGE_ORIGINsss
+)
