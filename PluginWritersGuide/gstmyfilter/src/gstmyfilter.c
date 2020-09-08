@@ -143,6 +143,27 @@ gst_my_filter_get_property (GObject * object, guint prop_id,
   }
 }
 
+/* chain function
+ * this function does the actual processing for this element
+ */
+void GstFlowReturn
+gst_my_filter_chain (GstPad *pad, GstObject *parent, GstBuffer *buf)
+{
+  GstMyFilter *filter;
+
+  filter = GST_MYFILTER (parent);
+
+  if (!filter->silent) {
+      g_print(" PTS: %" G_GUINT64_FORMAT " DTS: %" 
+          G_GUINT64_FORMAT " size % " G_SIZE_FORMAT " bytes !\n ",
+              buf->pts, buf->dts, gst_buffer_get_size(buf));
+  }
+
+  /* Just push out the incoming buffer without touching it */
+  return gst_pad_push (filter->srcpad, buf);
+}
+
+
 /* entry point to the plug-in, called when the plugin is loaded
  * initializes the plugin itself, register the element factories
  * other features
