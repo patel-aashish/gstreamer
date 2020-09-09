@@ -143,6 +143,37 @@ gst_my_filter_get_property (GObject * object, guint prop_id,
   }
 }
 
+/* GstElement vmethod implementation */
+/* This function handles sink events */
+static gboolean
+gst_my_filter_sink_event (GstPad *pad, GstObject *parent, GstEvent *event)
+{
+  GstMyFilter *filter;
+  gboolean ret;
+
+  filter = GST_MYFILTER(parent);
+
+  GST_LOG_OBJECT (filter, "Received %s event: %" GST_PTR_FORMAT,
+      GST_EVENT_TYPE_NAME (event), event);
+
+  switch (GST_EVENT_TYPE(event)) {
+    case GST_EVENT_CAPS:
+    {
+      GstCaps *caps;
+
+      gst_event_parse_caps (event, &caps);
+
+      /* we can process something based on caps here */
+      ret = gst_pad_event_default (pad, parent, event);
+      break;
+    }
+    default:
+      ret = gst_pad_event_default (pad, parent, event);
+      break;
+  }
+  return ret;
+}
+
 /* chain function
  * this function does the actual processing for this element
  */
