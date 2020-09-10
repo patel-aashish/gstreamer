@@ -101,11 +101,11 @@ gst_my_filter_init (GstMyFilter * filter)
                               GST_DEBUG_FUNCPTR(gst_my_filter_sink_event));
   gst_pad_set_chain_function (filter->sinkpad,
                               GST_DEBUG_FUNCPTR(gst_my_filter_chain));
-  GST_PAD_SET_PROXY_CAPS (filter->sinkpad);
+  gst_pad_set_query_function (filter->sinkpad,
+                              GST_DEBUG_FUNCPTR(gst_my_filter_sink_query));
   gst_element_add_pad (GST_ELEMENT (filter), filter->sinkpad);sss
 
   filter->srcpad = gst_pad_new_from_static_template (&src_factory, "src");
-  GST_PAD_SET_PROXY_CAPS (filter->srcpad);
   gst_element_add_pad (GST_ELEMENT (filter), filter->srcpad);
 
   filter->silent = FALSE;
@@ -174,6 +174,39 @@ gst_my_filter_sink_event (GstPad *pad, GstObject *parent, GstEvent *event)
   return ret;
 }
 
+/* Sink query functions
+ * Here we handle different types of query that concern us
+ */
+static gboolean
+gst_my_filter_sink_query (GstPad *pad, GstObject *parent, GstQuery *query)
+{
+  gboolean ret;
+  GstMyFilter *filter;
+
+  filter = GST_MYFILTER (parent);
+  
+  GST_DEBUG_OBJECT(filter, "query");
+
+  switch (GST_QUERY_TYPE(query)) {
+    case GST_QUERY_POSITION:
+      /* We should report the current position */
+      ret = gst_pad_query_default (pad, parent, query);
+      break;
+    case GST_QUERY_DURATION:
+      /* We should report the duration */
+      ret = gst_pad_query_default (pad, parent, query);
+      break;
+    case GST_QUERY_CAPS:
+      /* we should report the supported caps here */
+      ret = gst_pad_query_default (pad, parent, query);
+      break;
+    default:
+      ret = gst_pad_query_default(pad, parent, query);
+      break;
+  }
+  return ret;
+}
+
 /* chain function
  * this function does the actual processing for this element
  */
@@ -183,9 +216,11 @@ gst_my_filter_chain (GstPad *pad, GstObject *parent, GstBuffer *buf)
   GstMyFilter *filter;
 
   filter = GST_MYFILTER (parent);
+  
+  GST_DEBUG_OBJECT(filter, "chain");
 
   if (!filter->silent) {
-      g_print(" PTS: %" G_GUINT64_FORMAT " DTS: %" 
+      GST_INFO_OBJECT(filter, " PTS: %" G_GUINT64_FORMAT " DTS: %" 
           G_GUINT64_FORMAT " size % " G_SIZE_FORMAT " bytes !\n ",
               buf->pts, buf->dts, gst_buffer_get_size(buf));
   }
