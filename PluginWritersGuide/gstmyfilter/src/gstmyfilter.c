@@ -69,8 +69,9 @@ gst_my_filter_class_init (GstMyFilterClass *klass)
   gobject_class = (GstObjectClass *) klass;
   gstelement_class = (GstElementClass *) klass;
 
-  gobject_class->set_property = gst_my_filter_set_property;
-  gobject_class->get_property = gst_my_filter_get_property;
+  gobject_class->set_property = GST_DEBUG_FUNCPTR(gst_my_filter_set_property);
+  gobject_class->get_property = GST_DEBUG_FUNCPTR(gst_my_filter_get_property);
+  gstelement_class->change_state = GST_DEBUG_FUNCPTR(gst_my_filter_change_state);
 
   g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent","Produce verbose output",
@@ -139,6 +140,49 @@ gst_my_filter_get_property (GObject * object, guint prop_id,
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+      break;
+  }
+}
+
+static GstStateChangeReturn
+gst_my_filter_change_state (GstElement *element, GstStateChange transition)
+{
+  GstMyFilter *filter;
+  GstStateChangeReturn ret;
+
+  g_return_val_if_fail (GST_IS_MYFILTER(element), GST_STATE_CHANGE_FAILURE);
+  filter = GST_MYFILTER(element);
+
+  switch (transition) {
+    case GST_STATE_CHANGE_NULL_TO_READY:
+      GST_LOG_OBJECT(filter, "GST_STATE_CHANGE_NULL_TO_READY");
+      /* Allocate runtime resources and load runtime libs that are not stream specific */
+      break;
+    case GST_STATE_CHANGE_READY_TO_PAUSED:
+      GST_LOG_OBJECT(filter, "GST_STATE_CHANGE_READY_TO_PAUSED");
+      /* For sinks, single buffer will be received for pre-rolling */
+      break;
+    case GST_STATE_CHANGE_PAUSED_TO_PLAYING:
+      GST_LOG_OBJECT(filter, "GST_STATE_CHANGE_PAUSED_TO_PLAYING");
+      break;
+    default:
+      break;
+  }
+
+  ret = GST_ELEMENT_CLASS (parent_class)->change_state (element, transition);
+
+  switch (transition) {
+    case GST_STATE_CHANGE_PLAYING_TO_PAUSED:
+      GST_LOG_OBJECT(filter, "GST_STATE_CHANGE_PLAYING_TO_PAUSED");
+      break;
+    case GST_STATE_CHANGE_PAUSED_TO_READY:
+      GST_LOG_OBJECT(filter, "GST_STATE_CHANGE_PAUSED_TO_READY");
+      break;
+    case GST_STATE_CHANGE_READY_TO_NULL:
+      GST_LOG_OBJECT(filter, "GST_STATE_CHANGE_READY_TO_NULL");
+      /* De-allocate runtime resources and load runtime libs that are not stream specific */
+      break;
+    default:
       break;
   }
 }
